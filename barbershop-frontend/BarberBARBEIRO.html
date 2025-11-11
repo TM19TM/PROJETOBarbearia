@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Barbeiro</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+
+            /* --- NOVO --- */
+            background-image: url('barberIMG.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            /* --- FIM --- */
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #fff; /* Fundo branco para legibilidade */
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 25px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        h1 { text-align: center; }
+        h2 { border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        
+        .agenda-lista { list-style-type: none; padding: 0; }
+        .agenda-item { background: #f0f0f0; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .agenda-item .info { font-size: 1.1em; }
+        .agenda-item .horario { font-weight: bold; font-size: 1.2em; margin-right: 20px; }
+        .agenda-item button { background-color: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+        .agenda-item button:hover { background-color: #117a8b; }
+        
+        .feedback-lista { list-style-type: none; padding: 0; }
+        .feedback-item { background: #fdfdfd; border: 1px solid #eee; padding: 12px; margin-bottom: 8px; border-radius: 5px; }
+        .feedback-item .cliente { font-weight: bold; color: #333; }
+        .feedback-item .comentario { margin-top: 5px; font-style: italic; }
+
+        .painel-barbeiro {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+        }
+        .widget-contador {
+            text-align: center;
+        }
+        .widget-contador h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .widget-contador span {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .btn-walkin {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-walkin:hover {
+            background-color: #218838;
+        }
+
+        .feedback-item .valor {
+        color: #007bff; /* Azul */
+        font-weight: bold;
+        margin-left: 10px;
+    }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Minha Agenda</h1>
+        <p>Olá, <strong>Nome do Barbeiro</strong>! Estes são seus próximos atendimentos.</p>
+
+        <div class="painel-barbeiro">
+            <div class="widget-contador">
+                <h3>Cortes Concluídos Hoje</h3>
+                <span id="contador-hoje">0</span>
+            </div>
+            <button id="btn-add-walkin" class="btn-walkin">
+                + Adicionar Corte (Walk-in)
+            </button>
+        </div>
+        <div class="agenda">
+            <h2>Próximos Clientes</h2>
+            <ul class="agenda-lista">
+            </ul>
+        </div>
+        
+        <div class="feedback">
+            <h2>Feedbacks Recebidos</h2>
+            <ul class="feedback-lista">
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- Função para Registrar o cliente ---
+        function registrarPedido(nomeCliente) {
+            alert("Abrir formulário para registrar o pedido e valor final para: " + nomeCliente);
+        }
+
+        // --- Função para o Barbeiro concluir o atendimento ---
+        async function concluirAtendimento(agendamentoId) {
+            const valorInput = prompt("Qual o valor final o serviço? (Ex: 50)"); // Pergunta o valor do serviço
+            if (!valorInput) {
+                alert('Cancelado.');
+                return;
+            }
+
+            const valor = parseFloat(valorInput);
+            if (isNaN(valor) || valor < 0) {
+                alert('Valor inválio. por favor digite apenas números.');
+                return;
+            }
+
+            const token = localStorage.getItem('barberToken');
+
+            try {
+                const response = await fetch(`http://localhost:3000/agendamentos/concluir/${agendamentoId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({valor: valor})
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message); // Atendimento concluído com sucesso!
+                    window.location.reload(); // Recarrefa a página oara remover o item da lista
+                } else {
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erro ao concluir atendimento: ', error);
+                alert('Erro de conexão ao tentar concluir o atendimento.');
+            }
+        }
+
+        // --- Função para o barbeiro adicionar um walk-in ---
+        async function adicionarWalkin() {
+            const clienteNome = prompt("Qual o nome do cliente?");
+            if (!clienteNome) return; //cancelou
+
+            const servico = prompt(`Qual o serviço prestado para o ${clienteNome}? (EX: Corte)`);
+            if (!servico) return //cancelou
+
+            const valorInput = prompt("Qual o valor final do serviço? (Ex: 50)");
+            if (!valorInput) return; //cancelou
+
+            const valor = parseFloat(valorInput);
+            if (isNaN(valor) || valor < 0) {
+                alert('Valor inválido. Por favor, insira apenas números.');
+                return;
+            } 
+
+            const token = localStorage.getItem('barberToken');
+
+            try {
+                const response = await fetch('http://localhost:3000/agendar/walkin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({clienteNome: clienteNome, servico: servico, valor: valor})
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message); //Registrado com sucesso!
+                    window.location.reload() // Manda o lendario F5
+                }else{
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erro ao registrar walk-in: ', error);
+                alert('Erro de conexão ao registrar o atendimento.');
+            }
+        }
+
+        // --- Função para formatar a hora
+        function formatarHora(dataISO) {
+            const data = new Date(dataISO);
+            const dataLocal = new Date(data.valueOf());
+            return dataLocal.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+        }
+
+        // --- Função para preencher a agenda no HTML ---
+        function popularAgenda(agendamentos) {
+            const listaContainer = document.querySelector('.agenda-lista');
+            listaContainer.innerHTML = ''; // limpar container
+
+            if (agendamentos.length === 0) {
+                listaContainer.innerHTML = '<li class="agenda-item"><span class="info">Você não tem clientes agendados para hoje.</span></li>';
+                return;
+            }
+
+            agendamentos.forEach(ag => {
+                //O 'populate' no back nos da acesso ao 'ag.cliente.nome'
+                const nomeCliente = ag.cliente ? ag.cliente.nome : 'Cliente Removido';
+                const itemHtml = `
+                <li class="agenda-item">
+                    <div>
+                        <span class="horario">${formatarHora(ag.dataHora)}</span>
+                        <span class="info">Cliente: <strong>${nomeCliente}</strong> - (Serviço: ${ag.servico})</span>
+                    </div>
+                    <button onclick="concluirAtendimento('${ag._id}')">Concluir Atendimento</button>
+                </li>
+                `;
+                listaContainer.innerHTML += itemHtml;
+            })
+        }
+
+        // --- Função para preencher os feedbacks no HTML ---
+        function popularFeedbacks(feedbacks) {
+            const listaContainer = document.querySelector('.feedback-lista');
+            listaContainer.innerHTML = ''; // limpar container
+
+            if (feedbacks.length === 0) {
+                listaContainer.innerHTML = '<li class="feedback-item"><div class="comentario">Você ainda não recebeu feedbacks.</div></li>';
+                return;
+            }
+
+            feedbacks.forEach(fb => {
+                let valorHtml = '';
+                if (fb.agendamentoId && fb.agendamentoId.valor !== undefined) { //
+                    const valorFormatado = `R$ ${fb.agendamentoId.valor.toFixed(2)}`; //
+                    valorHtml = `<span class="valor">${valorFormatado}</span>`; //
+                }
+                const itemHtml = `
+                    <li class="feedback-item">
+                    <span class="cliente">${fb.clienteNome}: ${valorHtml}</span>
+                    <div class="comentario">"${fb.comentario}"</div>
+                    </li>
+                `;
+                listaContainer.innerHTML += itemHtml;
+            })
+        }
+        
+        // --- LÓGICA PRINCIPAL (FUNCIONA QUANDO A PÁGINA É CARREGADA) ---
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('barberToken');
+            const nomeBarbeiro = localStorage.getItem('barberUserNome');
+
+            // 1. Segurança: Se não tiver token, o usuário vai de arrasta
+            if (!token) {
+                alert('Acesso negado. Por favor, faça login.');
+                window.location.href = 'BarberLOGIN.html';
+                return;
+            }
+
+            // 2. Buscar dados da API e Personalização: Coloca o nome do barbeiro no "Olá ..."
+            try {
+                const strongElement = document.querySelector('.container p strong');
+                if (strongElement && nomeBarbeiro) {
+                    strongElement.textContent = nomeBarbeiro;
+                }
+            } catch (e) {console.error("Erro ao definir nome: ", e);}
+
+            document.getElementById('btn-add-walkin').addEventListener('click', adicionarWalkin);
+
+            // 3. Contiunuar buscando dados da API
+            try {
+                const response = await fetch('http://localhost:3000/minha-agenda', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Não foi possivel carregar sua agenda');
+                }
+
+                const agenda = await response.json();
+                popularAgenda(agenda); // Chama a função para preencher o HTML    
+                
+                // Requisição feedbacks
+                const responseFeedback = await fetch('http://localhost:3000/meus-feedbacks', {
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+                if (!responseFeedback.ok) throw new Error('Erro ao carregar feedbacks');
+                const feedbacks = await responseFeedback.json();
+                popularFeedbacks(feedbacks);
+
+                // Requisição Estatística
+                const responseStats = await fetch('http://localhost:3000/minha-agenda/estatisticas', {
+                    headers: {'Authorization': 'Bearer ' + token}
+                });
+
+                if (responseStats.ok) {
+                    const stats = await responseStats.json()
+                    document.getElementById('contador-hoje').textContent = stats.totalConcluidos;
+                }else{
+                    console.error('Erro ao buscar estatísticas.');
+                }
+
+               } catch (error) {
+                console.error('Erro ao buscar dados do dashboard: ', error);
+                if (error.message.includes('Token')) {
+                    alert('Sua sessão expirou. Faça o login novamente.');
+                    localStorage.clear();
+                    window.location.href = 'BarberLOGIN.html';
+                } else {
+                    //Tratamento da agenda ou do feedback
+                    if (error.message.includes('agenda')) {
+                        document.querySelector('.agenda-lista').innerHTML = `<li class="agenda-item"><span class="info" style="color: red;">Erro ao carregar agenda.</span></li>`;
+                    }
+                    if (error.message.includes('feedbacks')) {
+                        document.querySelector('.feedback-lista').innerHTML = `<li class="feedback-item"><div class="comentario" style="color: red;">Erro ao carregar feedbacks.</div></li>`;
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinir Senha - BarberShop</title>
+    <style>
+        /* (Estou usando os mesmos estilos do seu login.html para manter a identidade) */
+        body { 
+            font-family: Arial, sans-serif; 
+            display: grid; 
+            place-items: center; 
+            min-height: 90vh; 
+            padding: 20px 0;
+            background-image: url('barberIMG.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .container { 
+            background: #fff; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 25px 35px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+            width: 90%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        .container h1 { 
+            text-align: center; 
+            margin-top: 0; 
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+        }
+        .form-group input { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            box-sizing: border-box;
+        }
+        .form-button { 
+            width: 100%; 
+            padding: 12px; 
+            background-color: #28a745; /* Botão verde */
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .form-button:hover { 
+            background-color: #218838; 
+        }
+        .form-links { 
+            text-align: center; 
+            margin-top: 15px; 
+        }
+        .form-links a { 
+            color: #007bff; 
+            text-decoration: none; 
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <form id="reset-password-form">
+            <h1>Crie sua Nova Senha</h1>
+            <p style="text-align: center; color: #555;">Digite sua nova senha abaixo.</p>
+            
+            <div class="form-group">
+                <label for="nova-senha">Nova Senha</label>
+                <input type="password" id="nova-senha" name="nova-senha" required>
+            </div>
+            <div class="form-group">
+                <label for="confirma-senha">Confirme a Nova Senha</label>
+                <input type="password" id="confirma-senha" name="confirma-senha" required>
+            </div>
+            
+            <button type="submit" class="form-button">Redefinir Senha</button>
+            
+            <div class="form-links">
+                <a href="BarberLOGIN.html">Voltar ao Login</a>
+            </div>
+        </form>
+
+    </div>
+
+    <script>
+        const resetForm = document.getElementById('reset-password-form');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (!token) {
+            alert('Link invalido ou não encontrado. Redirecionado para o login.');
+            setTimeout(() => {
+                window.location.href = 'BarberLogin.html';
+            }, 1000);
+        }
+
+        resetForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const novaSenha = document.getElementById('nova-senha').value;
+            const confirmaSenha = document.getElementById('confirma-senha').value;
+
+            if (novaSenha !== confirmaSenha) {
+                alert('As senhas não coincidem! Por favor, tente novamente.');
+                return;
+            }
+            if (novaSenha.length < 6) {
+                alert('A senha precisa ter pelo menos 6 caracteres.');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token, novaSenha: novaSenha})
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    window.location.href = 'BarberLOGIN.html';
+                } else {
+                    alert('Erro: ' + result.error);
+                }
+
+            }catch (error) {
+                console.error('Erro no reset-password:', error);
+                alert('Ocorreu um erro ao redefinir a senha. Por favor, tente novamente mais tarde.');
+            }
+        });
+    </script>
+
+</body>
+</html>

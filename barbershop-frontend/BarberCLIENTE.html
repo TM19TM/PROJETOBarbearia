@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Conta - BarberShop</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            margin: 0;
+            background-image: url('barberIMG.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 20px auto; 
+            background: rgba(255, 255, 255, 0.97);
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 25px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 { margin: 0; }
+        .btn-agendar {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer; /* Adicionado para links que agem como botões */
+        }
+        .btn-agendar:hover { background-color: #218838; }
+
+        h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        /* Área de Notificações */
+        .notificacoes-area {
+            margin-bottom: 20px;
+        }
+        .alerta {
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            margin-bottom: 10px;
+            border: 1px solid;
+        }
+        .alerta.info {
+            color: #004085;
+            background-color: #cce5ff;
+            border-color: #b8daff;
+        }
+        .alerta.aviso {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .alerta a { color: #721c24; font-weight: bold; text-decoration: underline; }
+
+        /* Seção: Próximo Agendamento */
+        .proximo-corte {
+            background-color: #e6f7ff;
+            border: 1px solid #b3e0ff;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .proximo-corte h3 { margin-top: 0; text-align: center; }
+        .proximo-corte .detalhes {
+            font-size: 1.2em;
+            line-height: 1.5;
+            text-align: center;
+        }
+        .proximo-corte .detalhes strong { color: #0056b3; }
+
+        /* Botões de Gerenciamento */
+        .botoes-acao {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .botoes-acao button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-remarcar {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-remarcar:hover { background-color: #0056b3; }
+        
+        .btn-desmarcar {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-desmarcar:hover { background-color: #c82333; }
+        
+        /* Seção: Histórico e Feedback */
+        .historico-lista { list-style-type: none; padding: 0; }
+        .historico-item {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .historico-item .info span { display: block; color: #555; }
+        .historico-item .info .servico { font-weight: bold; font-size: 1.1em; color: #333; }
+        
+        .btn-feedback {
+            background-color: #ffc107;
+            color: #333;
+            padding: 8px 12px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .btn-feedback:hover { background-color: #e0a800; }
+        
+        .feedback-concluido {
+            background-color: #f0f0f0;
+            color: #777;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-style: italic;
+            white-space: nowrap;
+        }
+
+        /* Estilos do Modal (Pop-up) */
+        .modal-overlay {
+            display: none; /* Escondido por padrão */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px 30px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        .modal-header h2 { margin: 0; }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+        }
+        .modal-body form .form-group {
+            margin-bottom: 15px;
+        }
+        .modal-body form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .modal-body form input[type="date"],
+        .modal-body form input[type="time"],
+        .modal-body form select,
+        .modal-body form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .modal-body form .botoes-form {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .botoes-form button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-confirmar { background-color: #28a745; color: white; }
+        .btn-cancelar-modal { background-color: #6c757d; color: white; }
+        
+        /* --- CSS para Fieldset no Modal --- */
+        .modal-body form fieldset {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+        }
+        .modal-body form legend {
+            font-weight: bold;
+            padding: 0 10px;
+            color: #333;
+        }
+        /* --- FIM --- */
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="header">
+            <h1>Olá, Nome do Cliente</h1>
+            <a href="#" class="btn-agendar" onclick="event.preventDefault(); abrirModal('modalAgendamento')">
+                Agendar Novo Corte
+            </a>
+        </div>
+
+        <div class="notificacoes-area">
+        </div>
+
+        <h2>Seu Próximo Agendamento</h2>
+        <div class="proximo-corte">
+            <h3>Seu agendamento atual:</h3>
+            <div class="detalhes">
+                Dia: <strong>Sexta-feira, 07/11</strong> às <strong>14:30</strong>
+                <br>
+                com o Barbeiro: <strong>João</strong>
+                <br>
+                Serviço: <strong>Corte + Barba</strong>
+            </div>
+            <div class="botoes-acao">
+                <button class="btn-remarcar" onclick="abrirModal('modalRemarcar')">Remarcar</button>
+                <button class="btn-desmarcar" onclick="abrirModal('modalDesmarcar')">Desmarcar Corte</button>
+            </div>
+        </div>
+
+        <h2>Meu Histórico de Cortes</h2>
+        <ul class="historico-lista">
+            <li class="historico-item">
+                <div class="info">
+                    <span class="servico">Corte + Barba</span>
+                    <span>Data: 01/11/2025</span>
+                    <span>Barbeiro: João</span>
+                </div>
+                <a href="#" class="btn-feedback">Deixar Feedback</a>
+            </li>
+            <li class="historico-item">
+                <div class="info">
+                    <span class="servico">Corte</span>
+                    <span>Data: 15/10/2025</span>
+                    <span>Barbeiro: Pedro</span>
+                </div>
+                <span class="feedback-concluido">Feedback Enviado</span>
+            </li>
+        </ul>
+
+    </div> <div id="modalAgendamento" class="modal-overlay" onclick="fecharModal('modalAgendamento')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Novo Agendamento</h2>
+                <span class="close-button" onclick="fecharModal('modalAgendamento')">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <form id="form-agendar">
+                    <fieldset>
+                        <legend>Detalhes do Serviço</legend>
+                        <div class="form-group">
+                            <label for="servico">Serviço Desejado</label>
+                            <select id="servico" name="servico">
+                                <option value="corte">Corte de Cabelo</option>
+                                <option value="barba">Barba</option>
+                                <option value="corte_barba">Corte + Barba</option>
+                                <option value="sombrancelha">Sombrancelha</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="barbeiro">Preferência de Barbeiro</label>
+                            <select id="barbeiro" name="barbeiro">
+                            </select>
+                        </div>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Data e Hora</legend>
+                        <div class="form-group">
+                            <label for="dia">Dia</label>
+                            <input type="date" id="dia" name="dia" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="horario">Horário</label>
+                            <input type="time" id="horario" name="horario" min="09:00" max="20:00" step="1800" required>
+                        </div>
+                    </fieldset>
+
+                    <div class="botoes-form">
+                        <button type="button" class="btn-cancelar-modal" onclick="fecharModal('modalAgendamento')">Cancelar</button>
+                        <button type="submit" class="btn-confirmar">Confirmar Agendamento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalDesmarcar" class="modal-overlay" onclick="fecharModal('modalDesmarcar')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Cancelar Agendamento</h2>
+                <span class="close-button" onclick="fecharModal('modalDesmarcar')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja cancelar seu agendamento?</p>
+                <form id="form-cancelar">
+                    <div class="form-group">
+                        <label for="motivo-cancelamento">Por favor, informe o motivo (obrigatório):</label>
+                        <select id="motivo-cancelamento" name="motivo" required>
+                            <option value="" disabled selected>Selecione um motivo...</option>
+                            <option value="imprevisto">Tive um imprevisto</option>
+                            <option value="remarcar">Vou remarcar para outra data</option>
+                            <option value="nao_preciso">Não preciso mais do serviço</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="detalhes-cancelamento">Detalhes (opcional):</glabel>
+                        <textarea id="detalhes-cancelamento" name="detalhes" rows="3"></textarea>
+                    </div>
+                    <div class="botoes-form">
+                        <button type="button" class="btn-cancelar-modal" onclick="fecharModal('modalDesmarcar')">Voltar</button>
+                        <button type="submit" class="btn-confirmar" style="background-color: #dc3545;">Confirmar Cancelamento</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalRemarcar" class="modal-overlay" onclick="fecharModal('modalRemarcar')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Remarcar Agendamento</h2>
+                <span class="close-button" onclick="fecharModal('modalRemarcar')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="remarcar-texto-atual">Seu agendamento atual é: <strong>Sexta, 07/11 às 14:30</strong>.</p>
+                <form id="form-remarcar">
+                    <div class="form-group">
+                        <label for="nova-data">Escolha o novo dia:</label>
+                        <input type="date" id="nova-data" name="nova-data" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="novo-horario">Escolha o novo horário:</label>
+                        <input type="time" id="novo-horario" name="novo-horario" min="09:00" max="20:00" step="1800" required>
+                    </div>
+                    <div class="botoes-form">
+                        <button type="button" class="btn-cancelar-modal" onclick="fecharModal('modalRemarcar')">Voltar</posbutton>
+                        <button type="submit" class="btn-confirmar">Confirmar Remarcação</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Função para abrir um modal específico
+        function abrirModal(modalId) {
+            var modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = "flex";
+            }
+        }
+
+        // Função para fechar um modal específico
+        function fecharModal(modalId) {
+            var modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // --- FUNÇÃO PARA ENVIAR FEEDBACK ---  
+
+        async function enviarFeedback(agendamentoId, barbeiroNome) {
+            const comentario = prompt(`Deixe seu feedback sobre o atendimento com ${barbeiroNome}:`);
+
+            if (!comentario || comentario.trim() === '') {
+                alert('Feedback cancelado');
+                return;
+            }
+
+            const token = localStorage.getItem('barberToken');
+            const dadosFeedback = {agendamentoId, barbeiroNome, comentario};
+
+            try {
+                const response = await fetch('http://localhost:3000/deixar-feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(dadosFeedback)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message); //Feedback enviado com sucesso!
+                    window.location.reload(); // Recarrega a página
+                } else {
+                    alert('Erro: ' + result.error); // Erro ao enviar feedback ou Feedback já enviado anteriormente
+                }
+            } catch (error) {
+                console.error('Erro ao enviar feedback', error);
+                alert('Erro de conexão ao enviar feedback. Por favor, tente novamente.');
+            }
+        }
+
+        // --- VARIÁVEL GLOBAL PARA GUARDAR O ID ---
+
+        let idParaCancelar = null;
+        let idParaRemarcar = null;
+
+        // --- FUNÇÃO PARA ABRIR O MODAL E DESMARCAR ---
+
+        function abrirModalDesmarcar(agendamentoId) {
+            idParaCancelar = agendamentoId; // Guarda o ID do agendamento
+            abrirModal('modalDesmarcar'); // Abre o modal
+        }
+
+        // --- FUNÇÃO PARA ABRIR O MODAL E REMARCAR ---
+
+        function abrirModalRemarcar(agendamento) {
+            idParaRemarcar = agendamento._id; // Guarda o ID do agendamento
+
+            // Atualiza o testo do modal com os dados reais
+            const textoModal = document.getElementById('remarcar-texto-atual');
+            textoModal.innerHTML = `Seu agendamento atual é: <strong>${formatarData(agendamento.dataHora)}</strong> às <strong>${formatarHora(agendamento.dataHora)}</string>`;
+
+            abrirModal('modalRemarcar'); // Abre o modal')
+        }
+
+        // -_-_-_- FUNÇÕES AUXILIARES PARA FORMATAR DATA E HORA -_-_-_-
+
+        // Converte uma data (ex: "2025-11-08T15:30:00.000Z") para "Sábado, 08/11"
+        function formatarData(dataISO) { 
+            const data = new Date(dataISO);
+            const dataLocal = new Date(data.valueOf()); //Ajuste simples de fuso horário (o new Date() pode mudar o dia)
+            return dataLocal.toLocaleDateString('pt-BR', {weekday: 'long', day: '2-digit', month: '2-digit'});
+        }
+
+        // Converte uma data (ex: "2025-11-08T15:30:00.000Z") para "12:30"
+        function formatarHora(dataISO) {
+            const data = new Date(dataISO);
+            const dataLocal = new Date(data.valueOf()); 
+            return dataLocal.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+        }
+
+        // -_-_-_- FUNÇÃO PARA POPULAR OS DADOS -_-_-_-
+
+        // --- Função para popular a seleção de barbeiros
+        function popularDropdownBarbeiros(barbeiros) {
+            const selectBarbeiro = document.getElementById('barbeiro');
+            // Não fazemos a limpeza do inner pois queremos manter a opção qualquer um
+
+            barbeiros.forEach(barbeiro => {
+                const option = document.createElement('option');
+                option.value = barbeiro.nome; // Colocamos o nome do barbeiro para virar um valor, ex: "Maycon"
+                option.textContent = barbeiro.nome; // Exibimos o nome do barbeiro
+                selectBarbeiro.appendChild(option);
+            });
+        }
+
+        // Preenche a área de notificações
+        function popularNotificacoes(notificacoes) {
+            const containerNotificacoes = document.querySelector('.notificacoes-area');
+            containerNotificacoes.innerHTML = ''; //Limpa a área
+
+            notificacoes.forEach(notif => {
+                const divAlerta = document.createElement('div');
+                divAlerta.className = `alerta ${notif.tipo}`; // exemplo - "alerta info"
+                divAlerta.innerHTML = notif.mensagem;
+                containerNotificacoes.appendChild(divAlerta);
+            });
+        }
+        
+        // Pega a lista de agendamentos e atualiza o HTML
+        function popularDashboard(agendamentos) {
+            const agora = new Date();
+
+            // 1. Popular o proximo agendamento
+            const containerProximo = document.querySelector('.proximo-corte');
+
+            //Encontra o primeiro agendamento (no futuro) e que esteja (agendado)
+            const proximo = agendamentos.find(ag =>
+                new Date(ag.dataHora) > agora && ag.status === 'agendado'
+            );
+
+            if (proximo) {
+                //Se encontrou, preenche o HTML
+                containerProximo.innerHTML = `
+                <h3>Seu próximo agendamento:</h3>
+                <div class="detalhes">
+                    Dia: <strong>${formatarData(proximo.dataHora)}</strong> às <strong>${formatarHora(proximo.dataHora)}</strong>
+                    <br>
+                    com o Barbeiro: <strong>${proximo.barbeiro}</strong>
+                    <br>
+                    Serviço: <strong>${proximo.servico}</strong>
+                </div>
+                <div class="botoes-acao">
+                    <button class="btn-remarcar" onclick='abrirModalRemarcar(${JSON.stringify(proximo)})'>Remarcar</button>
+                    <button class="btn-desmarcar" onclick="abrirModalDesmarcar('${proximo._id}')">Desmarcar Corte</button>
+                </div>
+                `; 
+            } else {
+                // Se não encontrou, mostrar uma mensagem
+                containerProximo.innerHTML = `
+                <h3>Você não tem nenhum agendamento futuro.</h3>
+                <div class="detalhes">
+                    Clique em "Agendar Novo Corte" para marcar seu horário!
+                </div>
+                `;
+            }
+        
+            // 2. POPULAR O HISTÓRICO DE CORTES
+                    const listaHistorico = document.querySelector('.historico-lista');
+                    
+                    // Filtrar pelos agendamentos passados, em ordem (mais recente primeiro)
+                    const historico = agendamentos
+                        .filter(ag => new Date(ag.dataHora) < agora)
+                        .sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
+                    
+                    listaHistorico.innerHTML = ''; // Limpa a lista falsa
+                    
+                    if (historico.length === 0) {
+                        listaHistorico.innerHTML = '<li class="historico-item"><div class="info"><span>Seu historico de cortes aparecerá aqui.</span></div></li>';
+                    } else {
+                        historico.forEach(ag => {
+                        
+                            // --- LÓGICA DO BOTÃO ATUALIZADA ---
+                            let feedbackButtonHtml = '<span class="feedback-concluido"></span>'; // Padrão (vazio p/ cancelados)
+                        
+                            if (ag.status === 'concluido') {
+                                if (ag.feedbackEnviado) { // Se for true
+                                    feedbackButtonHtml = '<span class="feedback-concluido">Feedback Enviado</span>';
+                                } else { // Se for concluído, mas o feedback for false (ou nulo)
+                                    feedbackButtonHtml = `<a href="#" class="btn-feedback" onclick="event.preventDefault(); enviarFeedback('${ag._id}', '${ag.barbeiro}')">Deixar Feedback</a>`;
+                                }
+                            }
+                            // --- FIM DA LÓGICA DO BOTÃO ---
+                        
+                            const item = `
+                                <li class="historico-item">
+                                    <div class="info">
+                                        <span class="servico">${ag.servico}</span>
+                                        <span>Data: ${formatarData(ag.dataHora)} às ${formatarHora(ag.dataHora)}</span>
+                                        <span>Barbeiro: ${ag.barbeiro}</span>
+                                        <span>Status: ${ag.status}</span>
+                                        <span>Valor: <strong>${ag.valor ? `R$ ${ag.valor.toFixed(2)}` : 'N/D'}</strong></span>
+                                    </div>
+                                    ${feedbackButtonHtml}
+                                </li>
+                                `;
+                            listaHistorico.innerHTML += item;
+                        });
+                    }
+                }
+
+
+        // -_-_-_- LÓGICA DA PÁGINA DO CLIENTE -_-_-_-
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            
+            //1. Pega o "passe Vip" (Token) e o nome do usuário da memória do navegador
+            const token = localStorage.getItem('barberToken');
+            const nomeCliente = localStorage.getItem('barberUserNome');
+
+            //2. Segurança: Se não houver token, expulsa o usuário
+            if (!token) {
+                alert('Acesso negado. Por favor, faça login.'); 
+                window.location.href = 'BarberLOGIN.html'; // Redireciona para a página de login
+                return;
+            }
+
+            // 3. Personalização: Atualiza o 'Olá, Nome do Cliente'
+            const headerTitulo = document.querySelector('.header h1');
+            if (nomeCliente){
+                headerTitulo.textContent = `Olá, ${nomeCliente}`;
+            }
+
+            // 4. Buscar os dados reais dos clientes
+            try {
+                const responseAgendamentos = await fetch('http://localhost:3000/meus-agendamentos', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token // Envia o "passe Vip"
+                    }
+                });
+
+                if (!responseAgendamentos.ok) throw new Error('Erro ao buscar agendamentos');
+                    const agendamentos = await responseAgendamentos.json();
+
+                // 5. Chamar a função para preencher o HTML
+                popularDashboard(agendamentos);
+
+                // 6. Popular as notificações
+                const responseNotificacoes = await fetch('http://localhost:3000/minhas-notificacoes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token // Envia o "passe Vip
+                    }
+                });
+
+                if (responseNotificacoes.ok) {
+                    const notificacoes = await responseNotificacoes.json();
+
+                    popularNotificacoes(notificacoes);
+                }else {
+                    console.error('Não foi possivel buscar as notificações.');
+                }
+
+                // 7. Requisição para buscar os barbeiros
+                const responseBarbeiros = await fetch('http://localhost:3000/barbeiros', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                if (responseBarbeiros.ok) {
+                    const barbeiros = await responseBarbeiros.json();
+                    popularDropdownBarbeiros(barbeiros);
+                } else {
+                    console.error('Não foi possivel buscar a lista de barbeiros.');
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar dados: ', error);
+                if (error.message.includes('Token')) {
+                    alert('Sua sessão expirou. Por favor, faça login novamente.');
+                    localStorage.clear(); // Limpa o token inválido
+                    window.location.href = 'BarberLOGIN.html';
+                }
+            }
+        });
+
+        // --- ENVIAR O FORMULÁRIO DE AGENDAMENTO ---
+        const formAgendamento = document.getElementById('form-agendar');
+        formAgendamento.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Evita o recarregamento da página
+
+            // 1. Pega os dados do formulário
+            const servico = document.getElementById('servico').value;
+            const barbeiro = document.getElementById('barbeiro').value;
+            const dia = document.getElementById('dia').value;
+            const horario = document.getElementById('horario').value;
+
+            //2. Pega o passe vip do localstorage
+            const token = localStorage.getItem('barberToken');
+            const dadosAgendamento = {servico, barbeiro, dia, horario};
+            
+            try {
+                const response = await fetch('http://localhost:3000/agendar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json', // Tipo de conteúdo JSON
+                        'Authorization': 'Bearer ' + token // Inclui o token no cabeçalho
+                    },
+                    body: JSON.stringify(dadosAgendamento)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message); // "Agendamento confirmado com sucesso!"
+                    fecharModal('modalAgendamento');
+                    window.location.reload(); // Recarrega a página para atualizar o agendamento
+                } else {
+                    alert('Erro: '+ result.error);
+                }
+            } catch (error) {
+                console.log('Erro ao agendar: ', error);
+                alert('Erro ao agendar. Por favor, tente novamente mais tarde.');
+            }
+        });
+
+        // --- FORMULÁRIO DE CANCELAMENTO ---
+
+        const formCancelamento = document.getElementById('form-cancelar');
+
+        formCancelamento.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Evita o recarregamento da página
+
+            // 1. Verifica se temos um ID guardado
+            if (!idParaCancelar) {
+                alert('Erro: ID do agendamento não encontrado.');
+                return;
+            }
+
+            // 2. Pega o Passe
+            const token = localStorage.getItem('barberToken');
+
+            try {
+                // 3. Envia o pedido DELETE para a nova rota, colocando o ID do agendamento na URL
+                const response = await fetch(`http://localhost:3000/agendamentos/${idParaCancelar}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message); // Agendamento cancelado com sucesso!
+                    idParaCancelar = null; // Limpa o ID
+                    fecharModal('modalDesmarcar');
+                    window.location.reload(); // Recarrega a página
+                } else {
+                    // Exemplo - "Você não tem permissão" ou "Agendamento não encontrado"
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erro ao cancelar o agendamento: ', error);
+                alert('Erro ao cancelar com o servidor. Por favor, tente novamente mais tarde.');
+            }
+        });
+
+        // --- FORMULÁRIO DE REMARCAÇÃO ---
+
+        const formRemarcar = document.getElementById('form-remarcar');
+
+        formRemarcar.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            // 1. Pega os novos dados do formulario
+            const dia = document.getElementById('nova-data').value;
+            const horario = document.getElementById('novo-horario').value;
+
+            // 2. Pega i ID e o Token
+            if (!idParaRemarcar) {
+                alert('Erro: ID do agendamento não encontrado.');
+
+                return;
+            }
+            const token = localStorage.getItem('barberToken');
+
+            try {
+                // 3. Envia o pedido PUT para a nova rota, colocando o ID do agendamento na URL
+                const response = await fetch(`http://localhost:3000/agendamentos/${idParaRemarcar}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({dia: dia, horario: horario}) // Envia os novo dados
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message); // Agendamento remarcado com sucesso!
+                    idParaRemarcar = null; //Limpa o ID
+                    fecharModal('modalRemarcar');
+                    window.location.reload() //Recarrega a página
+                } else {
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erro ao remarcar o agendamento: ', error);
+                alert('Erro ao conectar com o servidor. Por favor, tente novamente mais tarde.');
+            }
+        });
+
+    </script>
+
+</body>
+</html>

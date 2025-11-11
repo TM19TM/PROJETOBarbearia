@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Recepção</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            
+            /* --- NOVO --- */
+            background-image: url('barberIMG.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            /* --- FIM --- */
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: #fff; /* Fundo branco para legibilidade */
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 25px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        h1 { text-align: center; }
+        h2 { border-bottom: 1px solid #eee; padding-bottom: 5px; }
+
+        .colunas { display: flex; gap: 30px; }
+        .coluna-principal { flex: 2; }
+        .coluna-lateral { flex: 1; }
+        
+        .agenda-lista { list-style-type: none; padding: 0; }
+        .agenda-item { background: #f0f0f0; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .agenda-item .horario { font-weight: bold; font-size: 1.2em; margin-right: 15px; }
+        .agenda-item .barbeiro { font-weight: bold; color: #0056b3; }
+        
+        .pagamento-lista { list-style-type: none; padding: 0; }
+        .pagamento-item { background: #fffbeb; border: 1px solid #f9e0a0; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .pagamento-item .cliente { font-weight: bold; font-size: 1.1em; }
+        .pagamento-item .valor { font-size: 1.1em; color: #d9534f; font-weight: bold; }
+        .pagamento-item button { background-color: #28a745; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+        .pagamento-item button:hover { background-color: #218838; }
+
+        .feedback-lista { list-style-type: none; padding: 0; margin-top: 30px; }
+        .feedback-item { background: #fdfdfd; border: 1px solid #eee; padding: 12px; margin-bottom: 8px; border-radius: 5px; }
+        .feedback-item .cliente { font-weight: bold; color: #333; }
+        .feedback-item .comentario { margin-top: 5px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Dashboard da Recepção</h1>
+        <p>Olá, <strong>Nome da Recepcionista</strong>! Acompanhe a agenda e os pagamentos.</p>
+
+        <div class="colunas">
+            <div class="coluna-principal">
+                <h2>Agenda do Dia (Todos os Barbeiros)</h2>
+                <ul class="agenda-lista">
+                    <li class="agenda-item">
+                        <span class="horario">10:00</span>
+                        <span>Cliente: <strong>Alexandre Guimarães</strong></span> |
+                        <span class="barbeiro">Barbeiro: João</span>
+                    </li>
+                    <li class="agenda-item">
+                        <span class="horario">10:30</span>
+                        <span>Cliente: <strong>Maria Silva</strong></span> |
+                        <span class="barbeiro">Barbeiro: Pedro</span>
+                    </li>
+                </ul>
+
+                <div class="feedback">
+                    <h2>Feedbacks Recentes </h2>
+                    <ul class="feedback-lista">
+                        <li class="feedback-item">
+                            <span class="cliente">Alexandre Guimarães:</span>
+                            <div class="comentario">"O corte do João ficou excelente!"</div>
+                        </li>
+                        <li class="feedback-item">
+                            <span class="cliente">Maria Silva:</span>
+                            <div class="comentario">"A recepção foi muito ágil."</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="coluna-lateral">
+                <h2>Pagamentos Pendentes</h2>
+                <p>Pedidos registrados pelos barbeiros.</p>
+                
+                <ul class="pagamento-lista">
+                    <li class="pagamento-item">
+                        <span class="cliente">Alexandre Guimarães</span>
+                        <br>
+                        <span>Serviço: Corte</span>
+                        <br>
+                        <span class="valor">Valor: R$ 50,00</span>
+                        <br>
+                        <button onclick="processarPagamento(1)">Processar Pagamento </button>
+                    </li>
+                    <li class="pagamento-item">
+                        <span class="cliente">Maria Silva</span>
+                        <br>
+                        <span>Serviço: Corte + Barba</span>
+                        <br>
+                        <span class="valor">Valor: R$ 90,00</span>
+                        <br>
+                        <button onclick="processarPagamento(2)">Processar Pagamento </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // --- Funções Auxiliares ---
+    function formatarHora(dataISO) {
+        const data = new Date(dataISO);
+        return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+    function formatarValor(valor) {
+        return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+    function getNomeCliente(ag) {
+        if (ag.cliente) return ag.cliente.nome; // Cliente do sistema
+        if (ag.clienteNomeWalkin) return ag.clienteNomeWalkin; // Cliente walk-in
+        return 'Cliente (Walk-in)';
+    }
+
+    // --- Funções de Preenchimento (Populators) ---
+
+    function popularAgenda(agendamentos) {
+        const container = document.querySelector('.agenda-lista');
+        container.innerHTML = '';
+        if (agendamentos.length === 0) {
+            container.innerHTML = '<li class="agenda-item">Nenhum cliente agendado para hoje.</li>';
+            return;
+        }
+        agendamentos.forEach(ag => {
+            const nomeCliente = getNomeCliente(ag);
+            container.innerHTML += `
+                <li class="agenda-item">
+                    <span class="horario">${formatarHora(ag.dataHora)}</span>
+                    <span>Cliente: <strong>${nomeCliente}</strong></span> |
+                    <span class="barbeiro">Barbeiro: ${ag.barbeiro}</span>
+                </li>
+            `;
+        });
+    }
+
+    function popularFeedbacks(feedbacks) {
+        const container = document.querySelector('.feedback-lista');
+        container.innerHTML = '';
+        if (feedbacks.length === 0) {
+            container.innerHTML = '<li class="feedback-item"><div class="comentario">Nenhum feedback recente.</div></li>';
+            return;
+        }
+        feedbacks.forEach(fb => {
+            container.innerHTML += `
+                <li class="feedback-item">
+                    <span class="cliente">${fb.clienteNome} (p/ ${fb.barbeiroNome}):</span>
+                    <div class="comentario">"${fb.comentario}"</div>
+                </li>
+            `;
+        });
+    }
+
+    function popularPagamentos(pagamentos) {
+        const container = document.querySelector('.pagamento-lista');
+        container.innerHTML = '';
+        if (pagamentos.length === 0) {
+            container.innerHTML = '<li class="pagamento-item">Nenhum pagamento pendente.</li>';
+            return;
+        }
+        pagamentos.forEach(ag => {
+            const nomeCliente = getNomeCliente(ag);
+            container.innerHTML += `
+                <li class="pagamento-item">
+                    <span class="cliente">${nomeCliente}</span>
+                    <br>
+                    <span>Serviço: ${ag.servico} (com ${ag.barbeiro})</span>
+                    <br>
+                    <span class="valor">Valor: ${formatarValor(ag.valor)}</span>
+                    <br>
+                    <button onclick="processarPagamento('${ag._id}', '${nomeCliente}', '${formatarValor(ag.valor)}')">Processar Pagamento</button>
+                </li>
+            `;
+        });
+    }
+
+    // --- Função de Ação ---
+
+    async function processarPagamento(idPedido, nome, valor) {
+        if (!confirm(`Confirmar pagamento de ${valor} para ${nome}?`)) {
+            return;
+        }
+
+        const token = localStorage.getItem('barberToken');
+        try {
+            const response = await fetch(`http://localhost:3000/pagamentos/processar/${idPedido}`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                window.location.reload();
+            } else {
+                alert('Erro: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Erro ao processar pagamento:', error);
+            alert('Erro de conexão ao processar pagamento.');
+        }
+    }
+
+    // --- LÓGICA PRINCIPAL (Ao Carregar) ---
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('barberToken');
+        const nomeUser = localStorage.getItem('barberUserNome');
+        const perfilUser = localStorage.getItem('barberUserProfile'); // Assumindo que você salvou isso no login
+
+        // 1. Segurança
+        if (!token || (perfilUser !== 'recepcionista' && perfilUser !== 'admin')) {
+            alert('Acesso negado. Faça login como Recepção ou Admin.');
+            window.location.href = 'BarberLOGIN.html';
+            return;
+        }
+
+        // 2. Personalização
+        try {
+            document.querySelector('.container p strong').textContent = nomeUser;
+        } catch (e) {}
+
+        // 3. Buscar todos os dados
+        try {
+            const headers = { 'Authorization': 'Bearer ' + token };
+
+            // Fetch 1: Agenda do Dia
+            const resAgenda = await fetch('http://localhost:3000/agenda-do-dia', { headers });
+            if (resAgenda.ok) popularAgenda(await resAgenda.json());
+
+            // Fetch 2: Feedbacks
+            const resFeedback = await fetch('http://localhost:3000/feedbacks-todos', { headers });
+            if (resFeedback.ok) popularFeedbacks(await resFeedback.json());
+
+            // Fetch 3: Pagamentos Pendentes
+            const resPagamentos = await fetch('http://localhost:3000/pagamentos-pendentes', { headers });
+            if (resPagamentos.ok) popularPagamentos(await resPagamentos.json());
+
+        } catch (error) {
+            console.error("Erro ao carregar dashboard:", error);
+            alert('Erro ao carregar dados do servidor.');
+        }
+    });
+</script>
+</body>
+</html>

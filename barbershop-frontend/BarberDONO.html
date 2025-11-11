@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Administrador</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            
+            /* --- NOVO --- */
+            background-image: url('barberIMG.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            /* --- FIM --- */
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: #fff; /* Fundo branco para legibilidade */
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 25px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        h1 { text-align: center; }
+        .filtros { background-color: #f1f3f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; }
+        .filtros label { font-weight: bold; }
+        .filtros input, .filtros select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .relatorios { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .widget { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 20px; }
+        .widget h2 { margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        .widget .valor { font-size: 2.5em; font-weight: bold; color: #28a745; }
+        .widget table { width: 100%; margin-top: 10px; border-collapse: collapse; }
+        .widget th, .widget td { padding: 8px; border-bottom: 1px solid #ddd; text-align: left; }
+        .widget th { background-color: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Dashboard Administrador</h1>
+        <p>Olá, <strong>Nome do Dono</strong>! Veja o desempenho do seu negócio.</p>
+
+        <div class="filtros">
+            <label for="data-inicio">De:</label>
+            <input type="date" id="data-inicio" name="data-inicio">
+            <label for="data-fim">Até:</label>
+            <input type="date" id="data-fim" name="data-fim">
+            <label for="filtro-barbeiro" style="margin-left: 20px;">Barbeiro:</label>
+            <select id="filtro-barbeiro" name="filtro-barbeiro">
+                <option value="">Todos</option>
+            </select>
+            <button>Filtrar</button>
+        </div>
+
+        <div class="relatorios">
+            <div class="widget">
+                <h2>Faturamento Total </h2>
+                <div class="valor">R$ 1.250,00</div>
+                <p>Período selecionado</p>
+            </div>
+            
+            <div class="widget">
+                <h2>Total de Atendimentos</h2>
+                <div class="valor">25</div>
+                <p>Período selecionado</p>
+            </div>
+
+            <div class="widget">
+                <h2>Performance dos Barbeiros</h2>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Barbeiro</th>
+                        <th>Atendimentos</th>
+                        <th>Faturamento</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-barbeiros-corpo">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="widget">
+                <h2>Feedbacks Recentes </h2>
+                <table>
+                    <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Barbeiro</th> <th>Avaliação</th>
+                </tr>
+            </thead>
+                <tbody id="tabela-feedbacks-corpo">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        // --- Funções Auxiliares ---
+        function formatarValor(valor) {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        // --- Funções de Preenchimento (Populators) ---
+        
+        function popularWidgets(stats) {
+            // Widget: Faturamento Total
+            document.querySelector('.widget .valor').textContent = formatarValor(stats.faturamentoTotal);
+            // Widget: Total de Atendimentos
+            document.querySelectorAll('.widget .valor')[1].textContent = stats.totalAtendimentos;
+        }
+
+        function popularTabelaBarbeiros(performance) {
+            const container = document.getElementById('tabela-barbeiros-corpo');
+            container.innerHTML = ''; // Limpa
+
+            if (performance.length === 0) {
+                container.innerHTML = '<tr><td colspan="3">Nenhum dado encontrado para o período.</td></tr>';
+                return;
+            }
+
+            performance.forEach(barbeiro => {
+                const itemHtml = `
+                    <tr>
+                        <td>${barbeiro._id}</td>
+                        <td>${barbeiro.atendimentos}</td>
+                        <td>${formatarValor(barbeiro.faturamento)}</td>
+                    </tr>
+                `;
+                container.innerHTML += itemHtml;
+            });
+        }
+        
+        function popularTabelaFeedbacks(feedbacks) {
+            const container = document.getElementById('tabela-feedbacks-corpo');
+            container.innerHTML = ''; // Limpa
+
+            if (feedbacks.length === 0) {
+                container.innerHTML = '<tr><td colspan="3">Nenhum feedback recente.</td></tr>';
+                return;
+            }
+
+            feedbacks.forEach(fb => {
+                const itemHtml = `
+                    <tr>
+                        <td>${fb.clienteNome}</td>
+                        <td><strong>${fb.barbeiroNome}</strong></td> <td>"${fb.comentario}"</td>
+                    </tr>
+                `;
+                container.innerHTML += itemHtml;
+            });
+        }
+
+        function popularDropdownBarbeiros(barbeiros) {
+        const select = document.getElementById('filtro-barbeiro');
+        barbeiros.forEach(barbeiro => {
+            const option = document.createElement('option');
+            option.value = barbeiro.nome;
+            option.textContent = barbeiro.nome;
+            select.appendChild(option);
+        });
+    }
+
+        // --- Função Principal de Busca ---
+        
+        async function buscarDadosDashboard(dataInicio, dataFim, barbeiro) {
+            const token = localStorage.getItem('barberToken');
+            // Cria os parâmetros de URL de forma dinâmica
+            const params = new URLSearchParams();
+            if (dataInicio) params.append('dataInicio', dataInicio);
+            if (dataFim) params.append('dataFim', dataFim);
+            if (barbeiro) params.append('barbeiro', barbeiro); // Envia o nome do barbeiro
+
+            const queryString = params.toString();
+
+            try {
+                // Requisição 1: Estatísticas (com filtros)
+                const responseStats = await fetch(`http://localhost:3000/dashboard-admin?${queryString}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!responseStats.ok) throw new Error('Erro ao buscar estatísticas');
+
+                const dados = await responseStats.json();
+                popularWidgets(dados.stats);
+                popularTabelaBarbeiros(dados.performanceBarbeiros);
+
+                // Requisição 2: Feedbacks (com filtros)
+                const responseFeedbacks = await fetch(`http://localhost:3000/feedbacks-todos?${queryString}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!responseFeedbacks.ok) throw new Error('Erro ao buscar feedbacks');
+
+                const feedbacks = await responseFeedbacks.json();
+                popularTabelaFeedbacks(feedbacks);
+
+            } catch (error) {
+                console.error("Erro no dashboard:", error.message);
+                if (error.message.includes('Token') || error.message.includes('Acesso restrito')) {
+                    alert('Sessão expirada ou acesso negado. Faça login como admin.');
+                    localStorage.clear();
+                    window.location.href = 'BarberLOGIN.html';
+                }
+            }
+        }      
+
+        // --- Função para buscar os barbeiros (só roda 1 vez) ---
+        async function carregarFiltrosIniciais(token) {
+            try {
+                // Busca a lista de barbeiros para o dropdown (rota já existe)
+                const response = await fetch('http://localhost:3000/barbeiros', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (response.ok) {
+                    const barbeiros = await response.json();
+                    popularDropdownBarbeiros(barbeiros);
+                } else {
+                    console.error("Não foi possível carregar o filtro de barbeiros.");
+                }
+            } catch (e) {
+                console.error("Erro ao carregar filtros:", e);
+            }
+        }
+
+        // --- LÓGICA PRINCIPAL (Ao Carregar) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('barberToken');
+            const nomeDono = localStorage.getItem('barberUserNome');
+
+            // 1. Segurança
+            if (!token) {
+                alert('Acesso negado. Faça login.');
+                window.location.href = 'BarberLOGIN.html';
+                return;
+            }
+
+            // 2. Personalização
+            try {
+                document.querySelector('.container p strong').textContent = nomeDono;
+            } catch (e) {}
+            
+            // 3. Configura o botão de Filtro
+            const btnFiltrar = document.querySelector('.filtros button');
+            btnFiltrar.addEventListener('click', () => {
+                const dataInicio = document.getElementById('data-inicio').value;
+                const dataFim = document.getElementById('data-fim').value;
+                const barbeiro = document.getElementById('filtro-barbeiro').value;
+
+                if (dataInicio && !dataFim) {
+                    alert('Por favor, selecione a data final.');
+                    return;
+                }
+                if (!dataInicio && dataFim) {
+                    alert('Por favor, selecione a data inicial.');
+                    return;
+                }
+                
+                // Busca os dados com os 3 filtros
+            buscarDadosDashboard(dataInicio, dataFim, barbeiro || null); // Envia o barbeiro
+        });
+
+        // 4. Busca os dados iniciais (todos os tempos, todos barbeiros)
+        buscarDadosDashboard(null, null, null);
+        // 5. Busca a lista de barbeiros para o dropdown
+        carregarFiltrosIniciais(token); 
+    });
+    </script>
+</body>
+</html>

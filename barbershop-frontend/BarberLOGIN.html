@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - BarberShop</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            display: grid; 
+            place-items: center; 
+            min-height: 90vh; 
+            padding: 20px 0;
+            
+            /* Imagem de Fundo */
+            background-image: url('barberIMG.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .login-container { 
+            background: #fff; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 25px 35px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+            width: 90%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        .login-container h1 { 
+            text-align: center; 
+            margin-top: 0; 
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+        }
+        .form-group input { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            box-sizing: border-box; /* Garante que o padding não afete a largura */
+        }
+        .form-button { 
+            width: 100%; 
+            padding: 12px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .form-button:hover { 
+            background-color: #0056b3; 
+        }
+        
+        /* Botão secundário (Cadastro) */
+        .form-button.btn-register {
+             background-color: #28a745;
+        }
+        .form-button.btn-register:hover {
+             background-color: #218838;
+        }
+
+        /* Links para trocar de formulário */
+        .form-links { 
+            text-align: center; 
+            margin-top: 15px; 
+        }
+        .form-links a { 
+            color: #007bff; 
+            text-decoration: none; 
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .form-links a:hover { 
+            text-decoration: underline; 
+        }
+
+        /* --- CONTROLE DOS PAINÉIS --- */
+        /* Esconde os formulários de cadastro e recuperação por padrão */
+        #register-form, #forgot-password-form {
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+
+        <form id="login-form">
+            <h1>Login</h1>
+            <div class="form-group">
+                <label for="email-login">E-mail ou Telefone</label>
+                <input type="text" id="email-login" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="senha-login">Senha</label>
+                <input type="password" id="senha-login" name="senha" required>
+            </div>
+            
+            <button type="submit" class="form-button">Entrar</button>
+            
+            <div class="form-links">
+                <a onclick="mostrarPainel('forgot-password-form')">Esqueci minha senha</a>
+                <br><br>
+                <span>Não tem conta? </span>
+                <a onclick="mostrarPainel('register-form')">Cadastre-se</a>
+            </div>
+        </form>
+
+        <form id="register-form">
+            <h1>Cadastre-se</h1>
+            
+            <div class="form-group">
+                <label for="nome-reg">Nome Completo</label>
+                <input type="text" id="nome-reg" name="nome" required>
+            </div>
+            <div class="form-group">
+                <label for="telefone-reg">Telefone (WhatsApp)</label>
+                <input type="tel" id="telefone-reg" name="telefone" required>
+            </div>
+             <div class="form-group">
+                <label for="nasc-reg">Data de Nascimento</label>
+                <input type="date" id="nasc-reg" name="nascimento" required>
+            </div>
+            <div class="form-group">
+                <label for="email-reg">E-mail</label>
+                <input type="email" id="email-reg" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="senha-reg">Crie uma Senha</label>
+                <input type="password" id="senha-reg" name="senha" required>
+            </div>
+            
+            <button type="submit" class="form-button btn-register">Criar Conta</button>
+            
+            <div class="form-links">
+                <span>Já tem conta? </span>
+                <a onclick="mostrarPainel('login-form')">Faça o Login</a>
+            </div>
+        </form>
+
+        <form id="forgot-password-form">
+            <h1>Recuperar Senha</h1>
+            <p style="text-align: center; color: #555;">Informe seu e-mail para enviarmos um link de recuperação.</p>
+            
+            <div class="form-group">
+                <label for="email-forgot">E-mail</labe>
+                <input type="email" id="email-forgot" name="email" required>
+            </div>
+            
+            <button type="submit" class="form-button">Enviar Link</button>
+            
+            <div class="form-links">
+                <a onclick="mostrarPainel('login-form')">Voltar ao Login</a>
+            </div>
+        </form>
+
+    </div>
+
+    <script>
+        function mostrarPainel(idDoPainel) {
+            // Esconde todos os formulários
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('forgot-password-form').style.display = 'none';
+
+            // Mostra apenas o formulário solicitado
+            document.getElementById(idDoPainel).style.display = 'block';
+        }
+
+        // -_-_-_- Formulário de cadastro -_-_-_-
+        const registerForm = document.getElementById('register-form');
+        registerForm.addEventListener('submit', async function(event){
+            event.preventDefault(); // Evita o envio padrão do formulário
+
+            // Coleta os dados do formulário
+            const nome = document.getElementById('nome-reg').value; // Recebendo nome completo
+            const telefone = document.getElementById('telefone-reg').value; // Recebendo telefone
+            const dataNascimento = document.getElementById('nasc-reg').value; // Recebendo data de nascimento
+            const email = document.getElementById('email-reg').value; // Recebendo e-mail
+            const senha = document.getElementById('senha-reg').value; // Recebendo senha
+
+            // Fazer um objeto Json usando os dados recebidos
+            const formData = {
+                nome,
+                telefone,
+                dataNascimento,
+                email,
+                senha
+            };
+
+            // Enviar dados para o Backend
+            try{
+                const response = await fetch('http://localhost:3000/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok){
+                    alert('Cadastro finalizado com sucesso! Agora você pode fazer login.'); // Cadastro concluido com sucesso
+                    mostrarPainel('login-form'); // Voltar para o painel de login
+                } else {
+                    alert('Parece que o seu cadastro teve algum erro:' + result.error); // Mostrar o erro retornado pelo backend
+                }
+            } catch (error){
+                console.error('Erro ao cadastrar usuário:', error); // Log de erro no console
+                alert('Não foi possivel estabelecer uma comunicação com o servidor. Tente novamente mais tarde.'); // Mensagem de erro 
+            }
+        });
+
+        // -_-_-_- Formulário de login -_-_-_-
+        const loginForm = document.getElementById('login-form');
+        loginForm.addEventListener('submit', async function(event) {
+            event.preventDefault(); // Impede o recarregamento da página
+            
+            const email = document.getElementById('email-login').value; // Recebendo e-mail
+            const senha = document.getElementById('senha-login').value; // Recebendo senha
+
+            const formData = {
+                email,
+                senha
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`Bem-vindo, ${result.user.nome}!`); // Login bem-sucedido
+
+                    localStorage.setItem('barberToken', result.token); // Armazena o token JWT no localStorage
+                    localStorage.setItem('barberUserNome', result.user.nome); // Armazena o nome do usuário no localStorage
+                    localStorage.setItem('barberUserProfile', result.user.perfil); // Armazena o perfil do usuário no localStorage
+
+                    switch (result.user.perfil) {
+                        case 'cliente':
+                            window.location.href = 'BarberCLIENTE.html';
+                            break;
+                        case 'barbeiro':
+                            window.location.href = 'BarberBARBEIRO.html'; 
+                            break;
+                        case 'recepcionista':
+                            window.location.href = 'BarberRECEPCIONISTA.html';
+                            break;
+                        case 'admin':
+                            window.location.href = 'BarberDONO.html';
+                            break;
+                        default:
+                            alert('Perfil de usuário desconhecido.');
+                            break;
+                    }
+                } else {
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                console.log('Erro ao tentar fazer login', error);
+                alert('Não foi possivel conectar ao servidor. Tente novamente.');
+            }
+        });
+
+        // -_-_-_- Formulário de recuperação de senha -_-_-_-
+        const forgotPasswordForm = document.getElementById('forgot-password-form');
+        forgotPasswordForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const email = document.getElementById('email-forgot').value;
+
+            const button = forgotPasswordForm.querySelector('button');
+            button.disabled = true;
+            button.textContent = 'Enviando...';
+
+            try {
+                const response = await fetch('http://localhost:3000/forgot-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email}) 
+                });
+
+                const result = await response.json();
+
+                alert(result.message || result.error);
+
+                if (response.ok) { 
+                    mostrarPainel('login-form');
+                }
+            } catch (error) {
+                console.error('Erro no forgot-password: ', error);
+                alert('Erro ao conectar com o servidor. ');
+            } finally {
+                button.disabled = false;
+                button.innerText = 'Enviar Link';
+            }
+        });
+    </script>
+
+</body>
+</html>
