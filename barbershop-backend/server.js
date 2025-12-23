@@ -1,4 +1,5 @@
 // -_-_-_- Server.JS -_-_-_-
+process.env.TZ = 'America/Sao_Paulo'; //definindo o fuso horario para evitar erros de data/hora
 
 require('dotenv').config(); //importando o dotenv para variaveis de ambiente
 const express = require('express'); //importando o express
@@ -17,6 +18,22 @@ const PORT = 3000; //definindo a porta do servidor
 
 app.use(cors()); //habilitando o CORS
 app.use(express.json()); //habilitando o JSON
+
+// -_-_-_- FUNÇÃO AUXILIAR DE FUSO HORÁRIO -_-_-_-
+// Esta função ajuda a pegar o inicio e fim do dia no horário de Brasília
+// para fazer as buscas no banco de dados funcionarem corretamente.
+
+const getIntervaloDoDiaBrasilia = () => {
+    const agora = new Date();
+    // Pega a data de hoje no formato YYYY-MM-DD baseado em São Paulo
+    const dataString = agora.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    
+    // Cria o objeto Date forçando o offset -03:00
+    const inicioDia = new Date(`${dataString}T00:00:00.000-03:00`);
+    const fimDia = new Date(`${dataString}T23:59:59.999-03:00`);
+
+    return { inicioDia, fimDia };
+}
 
 // -_-_-_- MIDDLEWARE DE AUTENTICAÇÃO -_-_-_-
 
@@ -290,7 +307,7 @@ app.post('/agendar', verificarToken, async (req, res) => {
         const {servico, barbeiro, dia, horario} = req.body; // 1. Recebemos os dados do formulario (do frontend)
         const clienteId = req.user.id; // 2. Pegamos o ID do cliente (que o middleware de autenticação adicionou ao req)
         // 3. Combinamos o dia e a hora
-        const dataHoraAgendamento = new Date(dia + 'T' + horario);
+        const dataHoraAgendamento = new Date(`${dia}T${horario}:00.000-03:00`); // forçamos o fuso -03:00 para evitar erros
 
         //4. Criamos o novo agendamento no banco de dados
         const novoAgendamento = new Agendamento({
@@ -367,7 +384,7 @@ app.put('/agendamentos/:id', verificarToken, async (req, res) => {
         }
 
         // Atualiza o agendamento com a nova data/hora
-        const novaDataHora = new Date(dia + 'T' + horario);
+        const novaDataHora = new Date(`${dia}T${horario}:00.000-03:00`); // forçamos o fuso -03:00 para evitar erros
         agendamento.dataHora = novaDataHora;
         agendamento.status = 'agendado'; // Garante que o status volte a ser 'agendado'
 
@@ -412,12 +429,13 @@ app.get('/minhas-notificacoes', verificarToken, async (req, res) => {
 
         // --- Lógica das notificações ---
         const notificacoes = [];
-        const hoje = new Date();
+        const dataSpString = new Date().toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' });
+        const hojeSp = new Date(dataSpString);
         const aniversario = new Date(user.dataNascimento);
 
         // 1. Verificar aniversario
         // Compara o Mês e o dia 
-        if (aniversario.getUTCMonth() === hoje.getUTCMonth() && aniversario.getUTCDate() === hoje.getUTCDate()) {
+        if (aniversario.getUTCMonth() === hojeSp.getMonth() && aniversario.getUTCDate() === hojeSp.getDate()) {
             notificacoes.push({
                 tipo: 'info', // Para a cor azul
                 mensagem: `<strong>Feliz Aniversário, ${user.nome}!</strong> Você ganhou <strong>10% de desconto</strong> no seu próximo corte como presente!`
@@ -507,8 +525,9 @@ app.get('/minha-agenda', verificarToken, async (req, res) => {
         const nomeBarbeiro = req.user.nome; // 1. buscamos o nome do barbeiro
         
         // 2. Define o "Início" de hoje (para não mostrar agendamentos passados)
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0); // horario definido para meia noite de hoje
+        // Usamos nossa função auxiliar para pegar o começo do dia no Brasil
+        // Se usássemos 'new Date()' puro aqui, o servidor poderia pegar o dia errado (UTC)
+        const { inicioDia } = getIntervaloDoDiaBrasilia();
 
         // 3. Procura no MongoDB agendamentos para o barbeiro logado
         // que sejam de hoje em diante, e que estejam 'agendados'
@@ -624,18 +643,16 @@ app.get('/minha-agenda/estatisticas', verificarToken, async (req, res) => {
     try {
         const nomeBarbeiro = req.user.nome;
 
-        // 1. Define o início e o fim do dia de HOJE
-        const hojeInicio = new Date();
-        hojeInicio.setHours(0, 0, 0, 0); // meia noite de hoje
-
-        const hojeFim = new Date();
-        hojeFim.setHours(23, 59, 59, 999);
+        // 1. Define o início e o fim do dia de HOJE (COM AJUSTE DE FUSO)
+        // Novamente, usamos a função auxiliar para garantir que o "hoje"
+        // considera o dia do Brasil (ex: 00:00 até 23:59 BRT)
+        const { inicioDia, fimDia } = getIntervaloDoDiaBrasilia();
 
         // 2. Conta os agendamentos concluidos Hoje por este barbeiro
         const totalConcluidos = await Agendamento.countDocuments({
             barbeiro: nomeBarbeiro,
             status: 'concluido',
-            dataHora: {$gte: hojeInicio, $lte: hojeFim} // Filtra por data/hora
+            dataHora: {$gte: inicioDia, $lte: fimDia} // Filtra por data/hora Brasilia
         });
 
         res.status(200).json({totalConcluidos: totalConcluidos});
@@ -683,13 +700,14 @@ app.get('/dashboard-admin', verificarToken, verificarStaff, async (req, res) => 
         }
 
         if (dataInicio && dataFim) {
-            // Adiciona +1 dia ao dataFim para incluir o dia inteiro
-            const fim = new Date(dataFim);
-            fim.setDate(fim.getDate() + 1);
+            // (AJUSTE FUSO): Construção manual das datas com fuso -03:00
+            // Garante que o relatório de "01/01 a 31/01" pegue os dias completos no Brasil.
+            const inicio = new Date(`${dataInicio}T00:00:00.000-03:00`);
+            const fim = new Date(`${dataFim}T23:59:59.999-03:00`);
 
             filtro.dataHora = {
-                $gte: new Date(dataInicio),
-                $lt: fim
+                $gte: inicio,
+                $lte: fim // Usamos o $lte (menor ou igual) com o fim do dia (23:59)
             };
         }
 
@@ -734,14 +752,13 @@ app.get('/dashboard-admin', verificarToken, verificarStaff, async (req, res) => 
 // Rota para ver a agenda de HOJE (todos os barbeiros)
 app.get('/agenda-do-dia', verificarToken, verificarStaff, async (req, res) => {
     try {
-        const hojeInicio = new Date();
-        hojeInicio.setHours(0, 0, 0, 0);
-        const hojeFim = new Date();
-        hojeFim.setHours(23, 59, 59, 999);
+        // (AJUSTE FUSO): Novamente, usamos a função auxiliar para garantir que "Hoje"
+        // é o dia de hoje no Brasil, não em Londres/UTC.
+        const { inicioDia, fimDia } = getIntervaloDoDiaBrasilia();
 
         const agenda = await Agendamento.find({
             status: 'agendado',
-            dataHora: { $gte: hojeInicio, $lte: hojeFim }
+            dataHora: { $gte: inicioDia, $lte: fimDia }
         })
         .sort({ dataHora: 1 })
         .populate('cliente', 'nome');
